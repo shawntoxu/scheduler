@@ -9,12 +9,7 @@
 
 ---------------------------------------------------------------------------------------------
 
-美东线上环境(有sudo权限)：
-跳板机：ssh atell@sb1.ymtech.info -p62222 
-web：dssh 10.1.20.10  单核 3.7g内存 30G硬盘+100G硬盘(attemptLogFileServer)  (外网域名：scheduler.ymtech.info) jvm 给了2g
-agent：dssh 10.1.20.11  单核 3.7g内存 30G硬盘
-storage：10.2.20.12(新加坡) 双核 7.5g内存 30G+500G硬盘 (外网域名：http://scheduler-storage.ymtech.info/index.jsp / 外网ip:52.74.99.30)
-db: yscheduler.cgs2bjzqxcxl.us-east-1.rds.amazonaws.com yscheduler/LwhScZPEUy3jZLe5 单核 3.75g内存  100G硬盘
+
 
 
 编译打包：
