@@ -1,0 +1,119 @@
+web程序流程
+
+打开默认域名------>UserContextFilter 
+
+             初始化一些url,从cookie中检查是否存在userContext 
+             不存在跳到登陆页面
+             存在跳转到访问页面
+
+             controller 返回的sreen 方法将返回字符串包装，一般返回到screen/xxx/main 视图，
+             对应的是 /WEB-INF/views/screen/xxx/main.htm(xx可能是index,login 等)最后由velocity 解析渲染 
+
+             渲染的过程是
+             一般是查找对应的 layout*.htm 先将controller 返回的main.html 及其同目录下的设置
+             变量的htm(如，设置了#set($title="首页")) 解析，解析完成后将结果放入
+
+             	layout*.htm	 中的占位符 $screen_content 所在处，layout*.html 在调用
+
+             	$!{title}  取得设置的变量$title="首页"
+
+             这里定义了3个layout 页面
+
+	             longinLayout.htm  登陆使用
+	             layout.htm        主页使用
+	             topoLayout.htm    拓扑使用
+
+
+菜单权限 使用页面velocity指令 判断用户是否为admin
+
+
+
+velocity 中的指令
+
+  #include("docs/index.md")  引用相对于resourceLoaderPath 路径下的静态文件
+
+  #parse("common/header.htm")  引用相对于resourceLoaderPath路径下的可包含velocity指令的文件
+
+
+  velocity 可以解析返回的java对象 ，使用$name 访问
+
+
+---------------------------------------------------------------------------------------------------
+
+查询我的任务
+url:/task get方法    ----->  TaskListController.index(...) --->  view :  screens/task/main
+
+Query 对象里面包含了查询的参数
+在DAO 层里面解析Query  添加到Criteria 里面 拼接出最终的 sql
+
+
+Constants 里面记录了一些常量 比如分页默认每页10 条
+
+先计算查询的总页数，把总数放入分页对象 Paginator 对象里面，计算当前页数，然后根据每一页显示条数查询当前页数据
+查询到task list 转为taskVO ，存放到map中，然后将paginator 也存放到map中
+
+
+
+
+创建任务
+url ：task/create  post ---->TaskCreateController.task()-----> view  
+
+添加 add()
+
+任务有定时调度 和 非定时调度(存储为已暂停状态)
+    OPEN(1, "已开启"), PAUSED(2, "已暂停"), REMOVED(3, "已删除");
+任务类型有shell http 2中 
+
+    http 类型的任务只能是 agent表中  name like platform%  的记录任务(这个agent一般是系统自身的agent节点)
+    如果这个表没有查询到name like platform%  的记录就不能创建http任务
+
+    http任务可能有 回调地址，取消地址等
+    calloutUrl + ';' + needCallback + ';' + cancelUrl
+
+
+允许跳过   
+  task表 last_status_dependency  存储 1 
+  并发就不能选
+
+不允许跳过 
+  如果允许并发(完成或成功项不能选)             task表      last_status_dependency=1 
+  不允许并发     完成触发  task表       last_status_dependency=20
+                 成功触发  task表       last_status_dependency=10
+
+
+任务修改
+url:task/update post-------->TaskUpdateController.update()----->json
+
+
+_heartbeat_* 类型的任务是检测 agent 是否正常的任务，创建者是monitor 属于系统任务
+一般调用下面命令，每个小时一次
+curl http://scheduler.ymtech.info/heartbeat/agent/active?agentId=16&agentVersion=${agentVersion}
+
+agentId 是指的添加的agent 在表agent的ID
+
+url ： heartbeat/agent/active   ---------->HeartbeatController.hearbeat()
+
+新增agent后，agent heartbeat会出现，进而会调用该方法
+
+
+
+---------------------------------------------------------------------------------------
+
+agent 查询
+   AgentController.index(...)
+
+    如果是admin则直接查询，否则带上teamid 查询
+    teamid = 1  admin
+
+
+
+
+
+
+
+
+
+
+
+
+

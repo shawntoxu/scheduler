@@ -1,0 +1,34 @@
+select id from workflow_instance  where `status` in (10,30) and workflow_id = 7  
+ and schedule_time > '2016-02-28 00:23:00' ; 
+
++-------+
+| id    |
++-------+
+| 10730 |
+| 11688 |
+| 11738 |
+| 11839 |
++-------+
+
+将运行中或失败的工作流 instance 中的 状态为失败(40)  任务instacne查询出来
+
+状态为检查依赖==1
+ select * from task_instance where workflow_instance_id in (10730,11688,11738)  and  `status` =40
+
+-------------------------------------------------------------------------------
+工作流id=8的 运行中或者失败任务
+select * from workflow_instance  where `status` in (10,30) and workflow_id = 8 
+ and schedule_time > '2016-02-28 00:23:00' ; 
+
+然后可以查询出所有执行失败的具体任务id
+ select id  from task_instance where workflow_instance_id in 
+ (
+  select id  from workflow_instance  where `status` in (10,30) and workflow_id = 8   and schedule_time > '2016-02-28 00:23:00'
+  ) and `status` =40 ; 
+
+
+验证查询出来的id 是否真的是执行失败
+http://scheduler.ymtech.info/task/instance/attempt?instanceId=9241621
+
+instanceId=9241621 就是任务实例的id ，在UI上可看到结果
+

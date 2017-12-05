@@ -1,0 +1,4 @@
+首先查询出agent_id  及 对应的IP地址，然后查询出非删除状态的任务
+
+select '10.1.20.11',name,crontab,command,`status` from task where agent_id = 3  and `status` <> 3 and  name not like '%_heart%' and name not like  '%_upgrade%'
+

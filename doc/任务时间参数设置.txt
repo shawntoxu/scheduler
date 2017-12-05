@@ -1,0 +1,13 @@
+关于调度脚本中时间变量解析
+例如 以下变量
+${scheduleTime:yyyyMMddHH:-1h}
+
+首先会从task_instance 表查询schedule_time 字段，
+如果没有就在其对应的workflow_instance中查询schedule_time字段
+查询到的值作为原始数据 交给ScheduleTimeHandler 类处理
+
+假如查询的值为2016-02-03 09:03:00
+然后根据规则 
+-1h 就是小时-1 
++1h 就是小时+1  依次类推  输出就是2016-02-03 08:03:00
+最后格式化为设置的yyyyMMddHH  就是2016020308

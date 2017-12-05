@@ -1,0 +1,83 @@
+添加一个agent，默认生成一个_heartbeat_* 的task
+
+-----------------------server 端处理流程---------------------------------------------
+ScheduleThread 会去扫描task 生成task_instance 并且生成attempt,提交给DefaultAttemptExecutor
+ DefaultTaskInstanceExecutor.this.attemptExecutor.submit(attempt0);
+最后由DefaultAttemptExecutor 执行InnerTask 线程
+
+ InnerTask 执行流程
+
+   提交任务到agent，直到有transactionId 返回，否则一直循环提交
+   long transactionId = submitToAgent(this.pair, params); 
+ 
+   根据task 的类型组装为 "http://ip/yscheduler/?eventType=SHELL_TASK_SUBMIT"  的url形式
+   并post 到agent上
+   AgentResponse<Long> res = agentClient.call(host, new AgentRequest(eventType, params));
+
+   获取AgentResponseCode 如果是SUCCESS，则取得txId ,
+    long txId = res.getResponseData()
+
+    
+   
+
+   取得了txId后，则发送检查任务状态的请求，
+   循环读取任务的执行状态及日志，直到任务状态为 失败|取消|成功|未知
+   http://ip/yscheduler/?eventType=TASK_STATUS
+   AgentResponse<TaskStatus> res = agentClient.call(host, new AgentRequest(TaskStatusEventHandler.EVENT_TYPE,
+
+                                                                                params));
+   
+   发送获取日志的请求(一次取得4k)，有日志数据则写到或者追加到文件服务器相应的文件中
+   http://ip/yscheduler/?eventType=TASK_LOG
+    AgentResponse<TaskLog> res = agentClient.call(host, new AgentRequest(TaskLogEventHandler.EVENT_TYPE, params));
+
+    将状态写入attempt
+    从内存中移除AttemptMap中执行完的任务
+
+
+在InnerTask 发送给agent执行任务的时候
+ControllerThread 不断的扫描内存instanceMap 及 attemptExecutor中instanceId的状态
+
+取得instance的attempt 的状态是，来处理下来的 重试|失败通知|取消
+
+
+----------------agent端流程-------------------------------------------------------------------------
+
+agent 收到request 将根据不同的type，分发给不同的handler
+
+ 这里以heatbeat 任务为例，它是Type=SHELL_TASK_SUBMIT 类型的，可以在agent的/dianyi/log/app.log日志中看到，由ShellTaskSubmitionEventHandler处理
+
+ShellTaskSubmitionEventHandler.onEvent(..)
+
+  agent 最终生成一个txId，取得command ,调用agent端的/dianyi/log/yagent/yscheduler/tx/shell下面的run.sh 脚本运行command
+
+   heatbeat  command为调用server 端的api，类似如下
+   curl http://172.30.80.127:8080/heartbeat/agent/active?agentId=9&agentVersion=localVersion
+
+  txId  生成采用的atomicInteger 自增
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

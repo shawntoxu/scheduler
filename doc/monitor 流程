@@ -1,0 +1,19 @@
+monitor 流程
+monitor监控_heartbeat_ 类型的task执行情况
+
+取得前1分钟的时间 毫秒数  创建date
+
+task 表取得name like _heartbeat_%的任务
+
+遍历每个task,传入task关联的 agentid ,联合查询agent表
+
+看这个agent 是否enable=1,enable=1继续处理
+
+从task_instance 表中取得 task_id =当前taskid ，schedule_time = date 的记录，如果没有查询到
+记录，就表示这个task 没有被调度成功，
+查询user 表 name=admin的账户的email 及 phone 
+开始发送邮件 及 sms
+
+email及sms 发送api配置在 src/main/resources 的notice-config.properties里面
+
+  

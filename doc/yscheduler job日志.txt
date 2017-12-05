@@ -1,0 +1,10 @@
+页面上的job 日志存放在web服务的
+/dianyi/fileServer/attempt-log 下面
+日志名称使用表attempt 的id
+比如id=5714 那么这次调度日志名称就是5714.log,字段output存储日志名字
+
+日志存放的实际路径文件夹规则就是id的路径
+例如
+5714.log 
+存放在路径在/dianyi/fileServer/attempt-log/5/7/1/4/5714.log
+

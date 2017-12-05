@@ -1,0 +1,30 @@
+
+ dmp_dev/dmp_dev               27个task   账户id=10
+ morning.zhang/morning.zhang   2个task    账户id=4
+
+ john.chen  2个task  账户id=9
+
+目前的调度分类
+java 调用，例如
+/usr/java/jdk1.7.0_67-cloudera/bin/java  -cp /dianyi/app/native-log-storm-0.0.2-jar-with-dependencies.jar:/dianyi/app/apache-storm-0.9.5/lib/* com.yeahmobi.nativelog.data.RedisDump2Mysql 10.1.11.20,10.1.11.21,10.1.11.25
+
+shell 调用，例如
+/dianyi/code/native/crontab/reload_index.sh track_url_builder.xml /dianyi/code/native/as/data
+
+
+查询属于 userId = 10 的正常任务(dmp_dev账户)
+select * from task where  and `owner` = 10 and `status` =1 
+
+
+统计某个用户的下的任务在节点的分布情况
+
+select a.id as agent_id,a.ip as ip,b.cc as '任务数' from agent as a join
+(select agent_id,count(agent_id) as cc from task where   `owner` = 10 and `status` =1  group by agent_id ) as b
+ on a.id = b.agent_id
+
+
+查询某个用户的任务详情及节点分布详情
+
+select a.id as agent_id,a.ip as ip,b.command  from agent as a join
+(select agent_id,command  from task where   `owner` = 10 and `status` =1  ) as b
+ on a.id = b.agent_id

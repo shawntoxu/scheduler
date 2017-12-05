@@ -1,0 +1,16 @@
+SQL []; Duplicate entry '43-2016-09-22 15:19:00' for key 'INDEX_TASKID_SCHEDULERTIME'; nested exception is com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException: Duplicate entry '43-2016-09-22 15:19:00' for key 'INDEX_TASKID_SCHEDULERTIME'
+
+
+查询出现在表中已经有记录
+
+select * from task_instance where task_id = 43  and schedule_time='2016-09-22 15:19:00' limit 1 ;  
+
+
++---------+---------+----------------------+--------+---------------------+------------+----------+---------------------+---------------------+
+| id      | task_id | workflow_instance_id | status | schedule_time       | start_time | end_time | create_time         | update_time         |
++---------+---------+----------------------+--------+---------------------+------------+----------+---------------------+---------------------+
+| 1620055 |      43 |                 NULL |     10 | 2016-09-22 15:19:00 | NULL       | NULL     | 2016-09-22 15:19:01 | 2016-09-22 15:19:01 |
++---------+---------+----------------------+--------+---------------------+------------+----------+---------------------+---------------------+
+
+将schedule_time 修改为别的值
+ update  task_instance  set schedule_time='2016-09-22 15:19:01' where id=1620055  ;  

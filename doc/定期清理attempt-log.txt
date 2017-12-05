@@ -1,0 +1,40 @@
+随着运维时间的推移
+  attempt  表的数据量会不断的增大
+  web 系统的attempt的日志量增高，可能导致磁盘容量不足，所以需要定时清理
+
+  任务日志存放在web系统/dianyi/fileServer/attempt-log 中
+  日志id就是attempt表的id
+
+
+以下将表attempt保留最近10000条记录
+
+查询出最近的10000个id中最小的
+select id from attempt where id = 
+  (SELECT id from attempt ORDER BY id desc  LIMIT 1) - 10000
+
+删除小于这个id的数据,删除后http://scheduler.ymtech.info/task/instance/attempt?instanceId=9233736  界面无法看到日志和任务情况，不影响已经执行和正在执行的任务
+
+DELETE  from  attempt where id < xxx
+
+
+删除后 查询最新的instance_id 
+select instance_id from attempt ORDER BY instance_id asc limit 1
+
+
+删除小于这些 id 的 task_instance 
+
+delete from task_instance where id < 2250750
+
+
+---------------------------------------------------------------------------------
+attempt表的数据删除后可以清理磁盘文件
+
+查询出的id 的头一个数字就是当前attempt-log 文件夹下使用的文件数字，把其他的数字代表的
+文件夹都可以删除以节省磁盘空间
+
+
+
+
+
+
+

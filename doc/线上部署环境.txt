@@ -1,0 +1,72 @@
+
+新脚本
+/root/paas/script/start-yscheduler.sh
+
+账户采用32小写 md5加密
+
+
+
+
+---------------------------------------------------------------------------------------------
+
+美东线上环境(有sudo权限)：
+跳板机：ssh atell@sb1.ymtech.info -p62222 
+web：dssh 10.1.20.10  单核 3.7g内存 30G硬盘+100G硬盘(attemptLogFileServer)  (外网域名：scheduler.ymtech.info) jvm 给了2g
+agent：dssh 10.1.20.11  单核 3.7g内存 30G硬盘
+storage：10.2.20.12(新加坡) 双核 7.5g内存 30G+500G硬盘 (外网域名：http://scheduler-storage.ymtech.info/index.jsp / 外网ip:52.74.99.30)
+db: yscheduler.cgs2bjzqxcxl.us-east-1.rds.amazonaws.com yscheduler/LwhScZPEUy3jZLe5 单核 3.75g内存  100G硬盘
+
+
+编译打包：
+   mvn clean package -DskipTests -Pproduct
+
+生成eclipse工程：
+   mvn eclipse:eclipse
+
+安装部署：
+1.agent模块部署：
+  解压到指定目录：unzip yagent-$VERSION.zip -p /dianyi/app/
+  启动：/dianyi/app/yagent/bin/jetty.sh start
+2.web模块部署：
+  解压到指定目录：unzip yscheduler-web-$VERSION.zip -d /dianyi/app/ue.yscheduler.dy/webapps/
+    启动：/etc/init.d/resin restart
+3.storage模块：
+  解压到指定目录：unzip yagent-$VERSION.zip -p /dianyi/app/
+  启动：/dianyi/app/yagent/bin/jetty.sh start
+
+
+测试环境：
+web: 172.20.0.160  ops/ops@123
+agent: 172.20.0.160  ops/ops@123
+storage:172.20.0.180 ops/ops@123  (用于存储作业附件)
+db: 172.20.0.160 root/root
+
+
+
+线上重启和验证：
+web（root用户）
+启动：/etc/init.d/resin restart
+关闭：/etc/init.d/resin stop
+验证：是否可以打开http://scheduler.ymtech.info 一般resin启动需要5到10分钟
+agent（root用户）
+启动：/dianyi/app/yagent/bin/jetty.sh start
+关闭：/dianyi/app/yagent/bin/jetty.sh stop
+验证：打开 http://scheduler.ymtech.info/agent 查看相应的agent的状态是否正常（若有问题是显示“异常”）
+storage（dev用户）
+启动：jetty.sh start
+关闭：jetty.sh stop
+验证：是否可以打开 http://scheduler-storage.ymtech.info/index.jsp
+
+添加一台agent的步骤：
+1. 在agent管理菜单里，添加agent，输入“名称” “ip” “分组”
+2. 让agent所在的业务方，讲agent包下载后部署到agent机器上，启动起来。
+    下载地址：http://qa.yscheduler.dy/download/agent.zip
+    部署方法：  
+      (1)解压到指定目录：unzip agent.zip -p /dianyi/app/
+      (2)启动：/dianyi/app/yagent/bin/jetty.sh start 
+
+管理员升级agent机器的方法：
+当agent有代码更新后，需要让已经安装agent的机器升级，可以使用此方法。
+1. 上传agent.zip包
+2. 上次agent升级脚本（该脚本在源代码中有，叫做upgrade.sh），之前已经上传过了，所以这一步一般可以不做，除非有修改upgrade.sh脚本
+3. 在agent管理页面，每个agent都有对应的有个“升级”按钮，点击后，可进入升级页面。升级时，是每个agent单独升级，无法批量全部agent一起升级。

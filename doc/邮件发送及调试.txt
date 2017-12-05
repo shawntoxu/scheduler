@@ -1,0 +1,73 @@
+邮件发送及sms需要在非dev模式下
+1 配置jvm 参数 yscheduler.devMode=false 才能发送邮件及sms
+
+美东web使用resin 服务器，配置/dianyi/app/ue.yscheduler.dy/conf/resin.properties
+里面有 yscheduler.devMode=false 配置
+
+
+如果servlet容器使用jetty
+ 添加jvm参数到jetty.sh
+ 在文件 jetty.sh 的43行，有如下内容：
+ # JAVA_OPTIONS
+# Extra options to pass to the JVM
+
+也可以在启动jetty 时加上参数
+java -jar start.jar -Djesttty.port=80 -Dyscheduler.devMode=false
+
+填写你的jvm参数，例如
+JAVA_OPTIONS="-Dyscheduler.devMode=false"
+
+
+
+如果是tomat, bin/bin/catalina.sh 第一行增加
+CATALINA_OPTS="-Dyscheduler.devMode=false"
+
+
+2 修改web系统配置文件，更新sms及email接口
+notice.emailApi=http://notify.ymtech.info/notify/api/send
+notice.emailApp=yscheduler_mail
+notice.emailAppKey=f9#1d3H
+notice.smsApi=http://notify.ymtech.info/notify/api/send
+notice.smsApp=yscheduler_sms
+notice.smsAppKey=6v8a#lo2
+notice.workflowInstanceUrl=http://localhost:8080/workflow/instance/tasks?instanceId=
+notice.taskInstanceUrl=http://localhost:8080/task/instance/attempt?instanceId=
+
+3 向bean中增加接口相关属性
+ monitor模块中applicationContext-notice.xml
+
+  emailSender，改为
+  	<bean id="emailSender" class="com.yeahmobi.yscheduler.common.notice.DefaultEmailSender">
+		<property name="mailApi">
+			<value>${notice.emailApi}</value>
+		</property>
+		<property name="app">
+			<value>${notice.emailApp}</value>
+		</property>
+		<property name="appKey">
+			<value>${notice.emailAppKey}</value>
+		</property>
+	</bean>
+ 
+  web模块中applicationContext-notice.xml emailSender 也修改为以上内容
+
+4 重新编译打包 monitor 及web 模块
+  替换common-0.6.3.jar
+      
+  部署了monitor模块的话  替换 monitor-0.6.3.jar
+
+  ------------------------------------------------
+  向日志中输出业务关键字错误，通过yeahmonitor 监控日志关键字打电话
+ yeahmobi-job-error 
+ gkt-job-error  
+
+ 打包scheduler-0.6.3 ，替换web端jar包
+
+
+ ------------------------
+ 目前 短信和邮件只发送给了 task 的 owner 账户
+
+scheduler 项目com.yeahmobi.yscheduler.notice.ReceiverHelper.java
+
+ 
+

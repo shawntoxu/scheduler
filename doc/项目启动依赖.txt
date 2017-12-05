@@ -1,0 +1,65 @@
+项目依赖
+
+
+agent 依赖于agent-framework
+
+
+DefaultSchedulerExecutor 来执行调度，是调度的入口程序
+
+scheduler 在spring初始化bean的时候运用@PostConstruct init()启动了后台线程
+
+schedule_progress 表存放调度进度 ，只有一条记录 存放时间 (2015-11-25 09:35:09)
+
+
+表workflow 取得 status=1的 记录
+表task     取得 status=1的 记录  表task中status含义(1, "已开启"), (2, "已暂停"),(3, "已删除")
+
+遍历取得的workflow
+	取得workflow上下次的调度时间和当前调度时间对比
+	如果当前调度时间大于下次调度时间	
+		查询此workflowid下面 status正在RUNNING(10) 及Init(1) 新建的workflow_instance
+		如有，则不触发调度; 被跳过，也持久化到数据库
+
+		 提交到工作流引擎
+		 AbstractWorkflowEngine init() 方法初始化线程调度，不断的去取可运行的工作流(私有的或者公共的)
+		 提交到agent执行
+
+遍历取得的task
+     同样验证 task是否具备执行的条件
+     可执行的话提交
+          new TaskInstance();
+          将状态设置为READY 提交
+          保存 到task_instance表
+           DefaultSchedulerExecutor.this.taskInstanceExecutor.submit(instance);
+
+            再次查询状态 如果task_instance 状态为READY
+              则将attempt 表中 instance_id 为此instacne的 active设置为false
+          更新task_instance 状态为Running
+          将task,task_instance 及 task_instance_id  放入instanceMap
+
+         DefaultTaskInstanceExecutor 系统启动时new ControllerThread(); 后台线程
+         遍历instanceMap 去执行attempt
+             没有运行此instance_id 的attempt 则创建一个attempt，保存到db
+             并将instance.getId(), pair保存到attemptMap，并提交任务到executorService缓存线程池中
+             executorService.submit(new InnerTask(pair));
+             InnerTask 为线程体
+
+
+         noticeService 报警 发送短信 邮件，超时的任务会发告警，但任务会继续
+
+
+
+间隔10s 调度一次，调度完成将时间+10s写入schedule_progress 表，然后不断的循环，每次+10s
+
+
+   判断wrokflow 属于自依赖  延迟 还是依赖别的
+    DefaultSchedulerExecutor.this.conditionChecker.satisfy(context)
+
+
+
+
+
+
+
+  
+

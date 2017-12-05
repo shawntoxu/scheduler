@@ -1,0 +1,61 @@
+a 添加一个团队，给团队下面加人员失败，需要在数据库中将团队id填入user表中
+    由这个人员登陆，首次登陆选择团队
+b 页面添加http 任务，添加不成功，需要改为添加shell任务才能成功
+
+
+1 创建任务，执行方式有单台执行和组内执行
+
+	单台执行:在用户的组内机器列表中选择一个机器执行
+	组内执行：在用户的组内机器列表中根据LB算法选择一个机器执行
+	          算法采用 index.getAndIncrement() % list.size() 
+	                   增加这种任务的数量 % 可用机器个数  取得可用agent 的list 的下标，返回
+
+ 
+2 任务类型为http 不需要选择agent ，后台直接从agent 名称 like platform% 取出一个agent
+  作为http任务执行的节点
+
+   目前添加http任务有问题,可以临时修改
+   2.1 修改WEB-INF/views/screens/task/create/js.htm 修改以下函数
+
+              function changeType(obj){
+                if(obj.value==20){
+                        $('.form-group').show();
+                        $('.type').hide();
+                        $('#shellcommand').hide();
+                } else {
+                        $('.type').show();
+                }
+        }
+
+    2.2 WEB-INF/views/screens/task/create/main.htm
+        给命令div 增加id ="shellcommand"
+        <div command class="form-group" id="shellcommand">
+           <label for="command" class="col-sm-2">命令*</label>
+                                                        
+    2.3 WEB-INF/views/screens/task/detail/js.htm
+     将if($("input[name='fileUpload']").val()!=""))改为如下(因为在http任务下没有附件节点)
+     if$("input[name='fileUpload']").length!=0 && $("input[name='fileUpload']").val()!="")
+
+
+3 同一个团队下的成员可以看见其他成员创建的task
+
+   TaskListController.buildQuery() 方法中修改为如下，每次查询时从上下文中取得userID 即owner
+   将此次查询的用户id设置进去
+
+        //add thisOwner by shawn
+        Long thisOwner = UserContextHolder.getUserContext().getId();
+        query.setOwner(thisOwner);
+        //query.setOwner(owner);
+
+        编译class  TaskListController.class ,替换掉旧的class
+        WEB-INF/classes/com/yeahmobi/yscheduler/web/controller/task/
+
+    修改前端页面，将搜索创建人的屏蔽掉[将以下代码屏蔽ijke]
+     <label>创建人: </label> <select
+      name="owner" class="">
+      <option value="">全部</option> #foreach($member in $teamMembers)
+      <option #if($query.owner==$member.id)selected #end value='$member.id'>$member.name</option>
+      #end
+    </select>
+
+-----------------------------------------------------------------------------

@@ -1,0 +1,133 @@
+
+------------------------------------------------------------------------------------
+查询工作流调度详情  CommonWorkflowInstanceController 处理
+
+首先在UI上点击进入工作流，在URL上看到工作流的ID
+工作流详情表workflow_detail 
+
+非admin用户 根据userid 及 workflow_id 查询到团队工作流的状态
+
+点击运行详情，能看到这次工作流调度的详细，URL上有instanceId 即workflow_instance_id
+
+
+
+查询某一个用户工作流调度情况，这里以morning.zhang账户为例子，首先查询user表得知user id=4
+
+1 查询出用户的teamid
+select team_id from user where id = 4 
+的到team_id=3
+
+2 查询出这次工作流调度的team信息
+select * from team_workflow_instance_status 
+where team_id = 3
+and workflow_id = 7 
+and workflow_instance_id=9697
+order by id DESC
+limit 5 
+3 根据workflow_instance_id 查询出workflow_instance 信息，假设上一步骤workflow_instance_id=9697
+select * from workflow_instance where id in (9697) ;
+4 能查询到workflow_instance  的话将工作流实例的状态设置为team_workflow_instance_status 里的状态，返回给UI,对于普通用户，状态应该由本team的所有运行结果来决定
+
+
+工作流调度详情 中的状态不对时修改
+比如设置为运行成功
+update team_workflow_instance_status set status=20 where id=72591; 
+状态码参考工作流状态 状态码
+ 
+workflow_instance表及team_workflow_instance_status 工作流状态码
+    INITED(1, "新建"), //
+    RUNNING(10, "运行中"), //
+    SUCCESS(20, "运行成功"), //
+    FAILED(30, "运行失败"), //
+    CANCELLED(40, "取消运行"), //
+    SKIPPED(50, "被跳过"), //
+    COMPLETE_WITH_UNKNOWN_STATUS(60, "未知的结束状态");
+
+查询这个工作流运行详情
+
+
+查询的是workflow_instance_id 下的所有的任务情况
+   select * from task_instance where workflow_instance_id=9697 ;  
+
+   表中的字段 start_time 为调度开始时间
+
+   task_id 记录了对应task表的id，根据task_id及instance_id(指task_instance表id)
+   可以到attempt表查询这次task的transaction_id
+   然后就可以在对应的agent 机器上/dianyi/log/yagent/yscheduler/tx 下面看到执行信息
+    
+   select * from attempt where task_id = 180  and instance_id=7806131 limit 5 \G ;
+   attempt 表存储的是具体的发给agent的执行任务，里面有任务执行日志名称
+
+   修改工作流详情下的某个任务的状态(要删除任务首先在调度的节点上删掉运行的进程)
+   id 为鼠标放置上去显示的url上的id
+   update task_instance set status=30,end_time='2016-03-09 01:25:06'  where id =  8512532 ; 
+
+task_instance 状态码  TaskInstanceStatus
+    DEPENDENCY_WAIT(1, "检查依赖"), // 
+    READY(10, "待运行"), //
+    RUNNING(20, "运行中"), //
+    SUCCESS(30, "运行成功"), //
+    FAILED(40, "运行失败"), //
+    WORKFLOW_FAILED(50, "工作流失败"), //
+    CANCELLED(60, "取消运行"), //
+    SKIPPED(70, "被跳过"), //
+    COMPLETE_WITH_UNKNOWN_STATUS(80, "未知的结束状态");
+
+工作流运行详情哪个状态不对要修改,7806133 为节点运行情况id，在UI上可以看到
+比如需要重跑设置为运行失败 
+update task_instance set statue=40  where id = 7806133
+状态码task_instance 状态码
+
+
+attempt表 状态码
+'1运行中，10运行成功，20失败，30取消运行,40未知的结束状态'
+
+-------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+工作流中有一步失败的任务，查看任务的相关表
+根据失败的工作流中的任务名称，查询task id 
+
+select * from task where name ='check_as_log_is_ok'
+结合工作流详情中的URL instanceId=11688查询本次task instace id
+select * from task_instance where workflow_instance_id=11688  and  task_id= 133 
+
+最后查询此次attempt 得到transaction_id
+select * from attempt where task_id =133 and instance_id=9246499
+
+更改此次任务执行状态为成功
+update attempt set status=10 where id = 9734685
+
+
+attempt 状态码
+ 1运行中
+ 10运行成功
+ 20失败
+ 30取消运行
+ 40未知的结束状态
+
+
+任务执行机器上找到/dianyi/log/yagent/yscheduler/tx/{transation_id}
+查看任务执行情况
+
+----------------------------------------------------------------------------------------------
+查询出工作流id=7 (点击运行历史最后一个参数为workflow_id http://xxx/common/instance?workflowId=8)
+查询出某个用户所属组的某个工作流的所有执行状态为执行失败的记录
+(页面上工作流调度详情看到的执行失败情况)
+select * from team_workflow_instance_status 
+where team_id = 3
+and workflow_id = 7 
+and status=30 
+
+查询运行中的工作流
+status=10  
+
+注意各个组的人看到公共工作流的任务状态可能不一样
+---------------------------------------------------------------------
+查询3月份到现在的失败或运行中的工作流实例
+select * from workflow_instance  where `status` in (10,30) and workflow_id = 7  
+and schedule_time > '2016-02-28 00:23:00'
+
+
+
+

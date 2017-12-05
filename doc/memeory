@@ -1,0 +1,3 @@
+memory 调查
+
+python /dianyi/app/derq/trunk/HiveWrapper.py /dianyi/app/derq/trunk/sqls/report/ad_access_distri.sql --database='dsp_system' --date='${scheduleTime:yyyyMMdd:-1d}'

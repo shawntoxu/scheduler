@@ -1,0 +1,14 @@
+手动增加心跳任务
+
+心跳任务的命名规则为  _heartbeat_ + 节点名称
+任务为
+curl http://scheduler.ymtech.info/heartbeat/agent/active?agentId=6&agentVersion=${agentVersion}
+
+agentId 为agent 表中id
+last_schedule_time 最好为当前时间，则加入之前的心态会忽略
+update_time 为稍微大于last_schedule_time 的时间点，心跳任务执行结束会更新此时间
+
+
+INSERT INTO `yscheduler`.`task` 
+(`id`, `name`, `owner`, `type`, `crontab`, `command`, `agent_id`, `status`, `can_skip`, `last_status_dependency`, `timeout`, `retry_times`, `description`, `last_schedule_time`, `attachment`, `attachment_version`, `create_time`, `update_time`) VALUES ( '_heartbeat_DMP-10-15', '2', '1', '0 * * * * *', 'curl http://scheduler.ymtech.info/heartbeat/agent/active?agentId=6&agentVersion=${agentVersion}', '16', '1', '0', '1', '1', '5', 'Hearbeat task for agent DMP-10-15', '2016-06-01 02:42:00', NULL, NULL, '2015-07-30 02:13:46', '2016-06-01 02:42:00');
+
