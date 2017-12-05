@@ -1,0 +1,39 @@
+
+agent 被servlet 容器加载进去，默认端口为24368，端口也可以在添加agent的时候填入10.1.2.30:5000这种形式将默认端口修改掉
+
+agent 通过AgentDispatchServlet 分发请求给具体handler
+每个event一个handler，handler接收请求参数，处理请求返回结果
+
+
+TaskSubmitionEventHandler
+
+  在agent 生成txId 并按照id 生成一个文件夹存放这次执行的日志、metadata信息
+  runningTransactions 是ConcurrentMap 保存生成的 txId, transaction
+   
+   shell执行pid的路径信息 basedir=/dianyi/log/yagent/yscheduler/tx/
+  "/dianyi/log/yagent/yscheduler/tx/" + txId + "/" + eventType + "/pid
+
+  然后向线程池中提交一个线程执行任务  transaction.execute();
+
+ 最终由ShellTaskExecutor 去执行任务
+
+
+
+---------------------------------------------------------------------------
+/dianyi/log/yagent/yscheduler/taskContext 下面按照task名称存放context信息
+
+如果是上传到存储服务器上的执行脚本,任务执行时则会下载到对应的task名称下
+
+页面上直接写  bash  xxx.sh  或者  ./xxx.sh  
+
+比如一个task 叫 mytset则上传的执行脚本会下载到所执行任务的机器的如下路径
+/dianyi/log/yagent/yscheduler/taskContext/mytest/context/
+
+
+
+----------------------------------------------------------------------------
+上传到存储服务器上的文件存放在/dianyi/fileServer/task/任务名称/版本号/ 下面
+
+
+
+
